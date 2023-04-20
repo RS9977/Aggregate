@@ -80,34 +80,42 @@ BB_adjacent_mat          = [] #it's for all the BBs inside a function
 BB_local_adj             = [] #it's local to each BB in a function
 BB_adjacent_mat_global   = {} #it's for all of the funcitons
 BB_livness               = [] #it's for all the BBs inside a function
-BB_livness_local         = [] #it's local to each BB in a function
+BB_livness_local         = set() #it's local to each BB in a function
 BB_livness_gloabal       = {} #it's for all of the funcitons
 BB_livness_start         = [] #it's for all the BBs inside a function
-BB_livness_local_start   = [] #it's local to each BB in a function
+BB_livness_local_start   = set() #it's local to each BB in a function
 BB_livness_gloabal_start = {} #it's for all of the funcitons
+BB_all_val               = [] #have all the variable use in a function
+BB_all_val_global        = {} #have entire variables
 for line in lines:
     words = line.split()
 
     if fun_def: #since we know the immidiate line after the __GIMPLE is the argument lines of the function
         fun_def = 0
-    
-    for word in words:
 
-        if '__GIMPLE' in word: #check for the __GIMPLE that is a distinctive annotation for the beginning of the function
-            fun_def                               = 1
+    if '__GIMPLE' in line: #check for the __GIMPLE that is a distinctive annotation for the beginning of the function
+        fun_def                                 = 1
         
-        if '{' in word: #check to see if we are in the function scope.
-            function_scope                        = 1 #check if we are inside of the function scope 
-        if '}' in word: #check to see if we are out of the function scope.
-            function_scope                        = 0   
-            BB_global_dict[function_name]         = BB_local_dict
-            BB_local_dict                         = {}
-            BB_adjacent_mat.append(BB_local_adj)
-            BB_adjacent_mat_global[function_name] = BB_adjacent_mat
-            BB_local_adj                          = []
-            BB_adjacent_mat                       = []
-            BB_ind                                = -1
-            function_name                        += 1 #increase the index of function
+    if '{' in line: #check to see if we are in the function scope.
+        function_scope                          = 1 #check if we are inside of the function scope 
+    if '}' in line: #check to see if we are out of the function scope.
+        function_scope                          = 0   
+        BB_global_dict[function_name]           = BB_local_dict
+        BB_local_dict                           = {}
+        BB_adjacent_mat.append(BB_local_adj)
+        BB_adjacent_mat_global[function_name]   = BB_adjacent_mat
+        BB_local_adj                            = []
+        BB_adjacent_mat                         = []
+        BB_livness.append(BB_livness_local)
+        BB_livness_start.append(BB_livness_local_start)
+        BB_livness_gloabal[function_name]       = BB_livness
+        BB_livness_gloabal_start[function_name] = BB_livness_start
+        BB_livness_local                        = set()
+        BB_livness_local_start                  = set()
+        BB_livness                              = []
+        BB_livness_start                        = []
+        BB_ind                                  = -1
+        function_name                          += 1 #increase the index of function
 
     if line[0:4] == '__BB':
         BB_scope                      = 1 #check that we are inside a BB
@@ -116,24 +124,44 @@ for line in lines:
     if BB_first_line: #store BBs data
         if BB_ind>=0: #not for the first one
             BB_adjacent_mat.append(BB_local_adj)
-        BB_local_adj           = [] 
-        BB_first_line          = 0 #reset the first line flag for BBs
-        start                  = line.find('(')+1
+            BB_livness.append(BB_livness_local)
+            BB_livness_start.append(BB_livness_local_start)
+        BB_local_adj                  = [] 
+        BB_livness_local              = set()
+        BB_livness_local_start        = set()
+        BB_first_line                 = 0 #reset the first line flag for BBs
+        start                         = line.find('(')+1
         if line.find(',') > 0: #check if there is other info
-            end                = line.find(',')
+            end                       = line.find(',')
         else:
-            end                = line.find(')') 
-        BB_name                = line[start: end]
-        BB_ind                += 1
-        BB_local_dict[BB_ind]  = int(BB_name) #update the local dict for BBs' name
+            end                       = line.find(')') 
+        BB_name                       = line[start: end]
+        BB_ind                       += 1
+        BB_local_dict[BB_ind]         = int(BB_name) #update the local dict for BBs' name
     
     if BB_scope:
-        
+        if ' =' in line: #Check if there is an assignment. This can be consider as the start of the livenss analysis since the tree is in SSA form
+            if '__MEM' not in words[0]:
+                BB_livness_local.add(words[0])
+                BB_livness_local_start.add(words[0])
+             
+            for word in words:
+                var = ''
+                if '_' in word and '__' not in word:
+                    for char in word:
+                        asci = ord(char)
+                        if (asci<=90 and asci >=65) or (asci<=57 and asci>=48) or (asci<=122 and asci>=97) or char =='_':
+                            var += char
+                    BB_livness_local.add(var)
+
+
+
         if 'goto' in line:
             start = line.find('B')+2
             BB_local_adj.append(int(line[start:-1]))
         if 'return' in line:
             BB_local_adj.append(-1)
+        
 
 
 print("\n\n---------------\n\nThe adjacent mat\n\n------------------\n\n")
@@ -144,6 +172,12 @@ for BB_local_adj in BB_adjacent_mat_global[1]:
     print(BB_local_adj)
     BB_ind += 1
 
+print("\n\n---------------\n\nStart of livness\n\n------------------\n\n")
+BB_ind = 0
+for BB_livness in BB_livness_gloabal[1]:
+    print(BB_global_dict[1][BB_ind], ": ", end='', sep='')
+    print(BB_livness)
+    BB_ind += 1
 
 #################################################################################
 #Traversing the tree to check the liveness

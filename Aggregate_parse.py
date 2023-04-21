@@ -7,6 +7,8 @@ with open(filename, "r") as file:
     for line in file:
         lines.append(line.strip())
 
+
+
 #################################################################################
 #Create the list of using variables.
 
@@ -63,6 +65,8 @@ for line in lines:
         
 print(var_all[1]['temp'])       
 print("\n\n\n",var_all[1]['static'])
+
+
 
 
 #################################################################################
@@ -193,6 +197,11 @@ for BB_livness in BB_livness_gloabal[0]:
         print(BB_livness)
     BB_ind += 1
 print("\n")
+
+
+
+
+
 #################################################################################
 #Traversing the tree to check the liveness
 def check_finish_teavers(visted_vertex, BB_adjacent_mat):

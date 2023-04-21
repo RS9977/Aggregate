@@ -250,7 +250,7 @@ for BB_adjacent_mat_key in BB_adjacent_mat_global:
                 BB_ind_visited = BB_rev_global_dict[function_name][visited[i]]
                 live_global[function_name][BB_ind_visited].add(var)
                     
-print("\n\n---------------\n\nlivness\n\n------------------\n\n")
+print("\n\n---------------\n\nlivness\n\n---------------\n\n")
 BB_ind = 0
 for BB_livness in live_global[1]:
     print(BB_global_dict[1][BB_ind], ": ", end='', sep='')
